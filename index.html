@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Negociações - Web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #f8f9ff;
+        }
+        
+        .upload-area:hover {
+            background-color: #edf2ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background-color: #e0e7ff;
+            border-color: #4f46e5;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .upload-hint {
+            color: #888;
+            font-size: 13px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-icon {
+            font-size: 18px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #f1f5ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-left-color: #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        footer {
+            margin-top: 30px;
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conversor de Negociações</h1>
+        <p class="subtitle">Converta arquivos de negociação para formato CSV</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text">Clique ou arraste seu arquivo Excel aqui</div>
+            <div class="upload-hint">Apenas arquivos .xlsx (formato "negociacao")</div>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".xlsx, .xls">
+        
+        <div class="file-info" id="fileInfo"></div>
+        
+        <button class="btn" id="convertBtn" disabled>
+            <span class="btn-icon">🔄</span>
+            Converter para CSV
+        </button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #666;">Processando arquivo...</p>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="instructions">
+            <h3>Instruções:</h3>
+            <ul>
+                <li>Selecione um arquivo Excel exportado da sua corretora (deve conter "negociacao" no nome)</li>
+                <li>O arquivo será convertido para o formato CSV compatível com "Meus Dividendos"</li>
+                <li><strong>Formato de saída:</strong> Dados separados por vírgula, valores entre aspas, sem cabeçalho</li>
+                <li>O arquivo resultante será baixado automaticamente</li>
+            </ul>
+        </div>
+        
+        <footer>
+            Conversor Web - Desenvolvido para facilitar a importação de negociações
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos do DOM
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const convertBtn = document.getElementById('convertBtn');
+            const fileInfo = document.getElementById('fileInfo');
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            
+            let selectedFile = null;
+            
+            // Eventos para a área de upload
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handleFileSelection(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // Evento para input de arquivo
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFileSelection(e.target.files[0]);
+                }
+            });
+            
+            // Evento para o botão de conversão
+            convertBtn.addEventListener('click', processFile);
+            
+            // Função para manipular a seleção de arquivo
+            function handleFileSelection(file) {
+                // Verificar se é um arquivo Excel
+                if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                    showStatus('Por favor, selecione um arquivo Excel (.xlsx ou .xls)', 'error');
+                    return;
+                }
+                
+                // Verificar se o nome contém "negociacao" (case insensitive)
+                if (!file.name.toLowerCase().includes('negociacao')) {
+                    showStatus('O arquivo deve conter "negociacao" no nome', 'error');
+                    return;
+                }
+                
+                selectedFile = file;
+                
+                // Atualizar informações do arquivo
+                fileInfo.innerHTML = `
+                    <strong>Arquivo selecionado:</strong> ${file.name}<br>
+                    <strong>Tamanho:</strong> ${formatFileSize(file.size)}<br>
+                    <strong>Tipo:</strong> ${file.type || 'Excel'}
+                `;
+                fileInfo.classList.add('show');
+                
+                // Habilitar botão de conversão
+                convertBtn.disabled = false;
+                
+                // Limpar status anterior
+                status.className = 'status';
+            }
+            
+            // Função principal de processamento
+            function processFile() {
+                if (!selectedFile) return;
+                
+                // Mostrar loading
+                loading.classList.add('show');
+                convertBtn.disabled = true;
+                status.className = 'status';
+                
+                // Ler o arquivo Excel
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        // Processar dados
+                        const data = e.target.result;
+                        const workbook = XLSX.read(data, { type: 'binary' });
+                        
+                        // Obter a primeira planilha
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Converter para JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        // Verificar se as colunas necessárias existem
+                        const requiredColumns = ['Código de Negociação', 'Data do Negócio', 'Preço', 'Quantidade', 'Tipo de Movimentação'];
+                        const firstRow = jsonData[0] || {};
+                        const missingColumns = requiredColumns.filter(col => !firstRow.hasOwnProperty(col));
+                        
+                        if (missingColumns.length > 0) {
+                            throw new Error(`Colunas não encontradas no arquivo: ${missingColumns.join(', ')}`);
+                        }
+                        
+                        // Processar os dados conforme a lógica Python original
+                        const processedData = jsonData.map(row => {
+                            // Extrair código sem o "F" no final
+                            let codigo = String(row['Código de Negociação'] || '');
+                            codigo = codigo.replace(/F$/, '');
+                            
+                            // Formatar data
+                            let data = row['Data do Negócio'];
+                            // Se for um objeto de data do Excel
+                            if (typeof data === 'number') {
+                                // Converter número do Excel para data
+                                const excelEpoch = new Date(1899, 11, 30);
+                                const date = new Date(excelEpoch.getTime() + data * 24 * 60 * 60 * 1000);
+                                data = date.toISOString().split('T')[0].split('-').reverse().join('/');
+                            }
+                            
+                            // Formatar valor com vírgula como separador decimal e colocar entre aspas
+                            let valor = parseFloat(row['Preço'] || 0);
+                            valor = `"${valor.toFixed(2).replace('.', ',')}"`;
+                            
+                            // Determinar tipo de operação
+                            let tipoMovimentacao = String(row['Tipo de Movimentação'] || '');
+                            let tipo = tipoMovimentacao.includes('Compra') ? 'Compra' : 'Venda';
+                            
+                            return {
+                                'Código': codigo,
+                                'Data': data,
+                                'Valor': valor, // Já está entre aspas
+                                'Quantidade': row['Quantidade'],
+                                'Tipo': tipo,
+                                'Despesas': 0
+                            };
+                        });
+                        
+                        // Criar CSV sem cabeçalho (sem labels das colunas)
+                        const csvContent = convertToCSV(processedData);
+                        
+                        // Gerar nome do arquivo de saída
+                        const outputName = selectedFile.name
+                            .replace(/negociacao/i, 'ordens')
+                            .replace(/\.xlsx?$/i, '.csv');
+                        
+                        // Baixar arquivo
+                        downloadCSV(csvContent, outputName);
+                        
+                        // Mostrar mensagem de sucesso
+                        showStatus(`Arquivo ${outputName} gerado com sucesso!`, 'success');
+                        
+                    } catch (error) {
+                        console.error('Erro no processamento:', error);
+                        showStatus(`Ocorreu um erro: ${error.message}`, 'error');
+                    } finally {
+                        // Ocultar loading
+                        loading.classList.remove('show');
+                        convertBtn.disabled = false;
+                    }
+                };
+                
+                reader.onerror = function() {
+                    showStatus('Erro ao ler o arquivo. Tente novamente.', 'error');
+                    loading.classList.remove('show');
+                    convertBtn.disabled = false;
+                };
+                
+                // Iniciar leitura do arquivo
+                reader.readAsBinaryString(selectedFile);
+            }
+            
+            // Função para converter array de objetos para CSV (SEM CABEÇALHO)
+            function convertToCSV(dataArray) {
+                if (dataArray.length === 0) return '';
+                
+                // Criar linhas do CSV sem cabeçalho
+                // Separar por vírgulas
+                const csvRows = dataArray.map(row => {
+                    // Obter todos os valores em ordem
+                    const values = [
+                        row['Código'],
+                        row['Data'],
+                        row['Valor'], // Já está entre aspas
+                        row['Quantidade'],
+                        row['Tipo'],
+                        row['Despesas']
+                    ];
+                    
+                    // Juntar todos os valores com vírgula
+                    return values.join(',');
+                });
+                
+                return csvRows.join('\n');
+            }
+            
+            // Função para baixar o CSV
+            function downloadCSV(csvContent, fileName) {
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Liberar objeto URL
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            }
+            
+            // Função para mostrar status
+            function showStatus(message, type) {
+                status.textContent = message;
+                status.className = `status ${type}`;
+            }
+            
+            // Função para formatar tamanho do arquivo
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+        });
+    </script>
+</body>
+</html>
